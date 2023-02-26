@@ -11,9 +11,9 @@ import sys
 
 # cave description index definitions:
 # leads to cave n,n,n [number]
-index_cave1 = 0
-index2_cave = 1
-index_cave3 = 2
+index_tunnel1 = 0
+index_tunnel2 = 1
+index_tunnel3 = 2
 # contains wumpus [bool]
 index_wumpus = 3
 # contains pit [bool]
@@ -34,6 +34,7 @@ class MakeCaves:
 
         # connect the caves
         if num_caves == 20:
+            # 20 caves uses the origial game of 20 caves in a set parttern
             self.location[1] = [2, 5, 8, False, False, False]
             self.location[2] = [1, 3, 10, False, False, False]
             self.location[3] = [2, 4, 12, False, False, False]
@@ -55,19 +56,23 @@ class MakeCaves:
             self.location[19] = [11, 18, 20, False, False, False]
             self.location[20] = [13, 16, 19, False, False, False]
         else:
+            # this creates random map of caves
             for cave_tunnel in range(3):
                 for acave in range(1, num_caves + 1):
-                    for attempt in range(100):
+                    for attempt in range(num_caves * 3):
                         rand_cave = random.randrange(1, num_caves + 1)
-                        if (self.location[rand_cave][cave_tunnel] == 0 and 
+                        if (self.location[rand_cave][cave_tunnel] == 0 and
                                 rand_cave != acave):
-                            self.location[acave][cave_tunnel] = rand_cave
-                            self.location[rand_cave][cave_tunnel] = acave
-                            break
+                            if (rand_cave != self.location[acave][index_tunnel1] and
+                                    rand_cave != self.location[acave][index_tunnel2]):
+                                self.location[acave][cave_tunnel] = rand_cave
+                                self.location[rand_cave][cave_tunnel] = acave
+                                break
                     
-                    # failed to find a path
+                    # failed to find all paths
                     if self.location[rand_cave][cave_tunnel] == 0:
                         print('\n***\nHelp, I could not build the caves.')
+                        sys.exit()
                 
         # randomly place wumpus
         rand_cave = random.randrange(num_caves + 1)
@@ -131,9 +136,9 @@ class MakeCaves:
             print('\nYou are in room {}.'.format(cave_location))
         
         # where can i go?
-        cave1 = self.location[cave_location][index_cave1]
-        cave2 = self.location[cave_location][index2_cave]
-        cave3 = self.location[cave_location][index_cave3]
+        cave1 = self.location[cave_location][index_tunnel1]
+        cave2 = self.location[cave_location][index_tunnel2]
+        cave3 = self.location[cave_location][index_tunnel3]
         print('Tunnels lead to {}, {}, {}.'.format(cave1, cave2, cave3))
         
         # smell[wumpus]
@@ -157,13 +162,14 @@ class MakeCaves:
         return cave_location
     
     def player_start_loc(self, num_caves):
+        # find an empty location for the player to start
         player_location = 0
         while player_location == 0:
             rand_cave = random.randrange(num_caves + 1)
             # check for wumpus
-            cave1 = self.location[rand_cave][index_cave1]
-            cave2 = self.location[rand_cave][index2_cave]
-            cave3 = self.location[rand_cave][index_cave3]
+            cave1 = self.location[rand_cave][index_tunnel1]
+            cave2 = self.location[rand_cave][index_tunnel2]
+            cave3 = self.location[rand_cave][index_tunnel3]
             if (self.location[rand_cave][index_wumpus] == False and
                     self.location[rand_cave][index_pit] == False and
                     self.location[rand_cave][index_bat] == False and
@@ -174,10 +180,11 @@ class MakeCaves:
         return player_location
             
     def player_move(self, player_location):
+        # player wants to move, give options and get response
         user_move = 0
-        cave1 = self.location[player_location][index_cave1]
-        cave2 = self.location[player_location][index2_cave]
-        cave3 = self.location[player_location][index_cave3]
+        cave1 = self.location[player_location][index_tunnel1]
+        cave2 = self.location[player_location][index_tunnel2]
+        cave3 = self.location[player_location][index_tunnel3]
         while user_move == 0:
             user_response = input('Where to? ({}-{}-{}) '.format(cave1, cave2, cave3))
             if user_response.isdigit():
@@ -187,6 +194,10 @@ class MakeCaves:
         return user_move
     
     def player_shoot(self, player_location):
+        ''' player wants to shoot, get distance to direction to shoot, then resolve the shot 
+        '''
+        
+        # get shoot distance
         user_shoot_distance = 0
         while user_shoot_distance == 0:
             user_response = input('Shoot how far? (1-5) ')
@@ -195,10 +206,11 @@ class MakeCaves:
                 if user_response in range(1,6):
                     user_shoot_distance = user_response
         
+        # get shoot direction
         user_shoot_cave = 0
-        cave1 = self.location[player_location][index_cave1]
-        cave2 = self.location[player_location][index2_cave]
-        cave3 = self.location[player_location][index_cave3]
+        cave1 = self.location[player_location][index_tunnel1]
+        cave2 = self.location[player_location][index_tunnel2]
+        cave3 = self.location[player_location][index_tunnel3]
         while user_shoot_cave == 0:
             user_response = input('Where to? ({}-{}-{}) '.format(cave1, cave2, cave3))
             if user_response.isdigit():
@@ -206,6 +218,7 @@ class MakeCaves:
                 if user_response in [cave1, cave2, cave3]:
                     user_shoot_cave = user_response
         
+        # resolve the shoot
         arrow_travel = 1
         while arrow_travel <= user_shoot_distance:
             if self.location[user_shoot_cave][index_wumpus] == True:
@@ -218,9 +231,9 @@ class MakeCaves:
                 
             elif arrow_travel < user_shoot_distance:
                 print('\tArrow ricochets!')
-                cave1 = self.location[user_shoot_cave][index_cave1]
-                cave2 = self.location[user_shoot_cave][index2_cave]
-                cave3 = self.location[user_shoot_cave][index_cave3]
+                cave1 = self.location[user_shoot_cave][index_tunnel1]
+                cave2 = self.location[user_shoot_cave][index_tunnel2]
+                cave3 = self.location[user_shoot_cave][index_tunnel3]
                 user_shoot_cave = random.choice([cave1, cave2, cave3])
             arrow_travel += 1
     
@@ -229,6 +242,7 @@ def play_game(num_caves):
     play_again = True
     
     while play_again == True:
+        # setup game
         wumpus_killed = False
         player_arrows = 5
         caves = MakeCaves(num_caves)
@@ -246,7 +260,7 @@ def play_game(num_caves):
                 while (user_response != 's' and 
                        user_response != 'm' and
                        user_response != 'q'):
-                    user_response = input('Shoot or Move (S-M) ').lower()
+                    user_response = input('Shoot or Move or Quit (S-M-Q) ').lower()
                 
                 # move
                 if user_response == 'm':
@@ -273,22 +287,23 @@ def play_game(num_caves):
                 # quit
                 elif user_response == 'q':
                     sys.exit()
-                    
-            # print('\n\nDM kills you')
-            # player_location = 0
         
+        # game ended, player dead or wumpus dead?
         if player_location == 0:
             print('\nYou are dead\n\nDo you want to play again?')
         else:
             print('The wumpus will get you next time.\n')
+        
+        # play again
         user_response = ''
         while (user_response != 'y' and 
                user_response != 'n' and
                user_response != 'q'):
             user_response = input('Do you want to play again? (Y-N) ').lower()
         
+        # exit game if not y to play again
         if user_response != 'y':
-            play_again = False
+            play_again = False 
 
 if __name__ == "__main__":
     prog_name = 'wumpus'
@@ -309,19 +324,6 @@ if __name__ == "__main__":
     '''
 
     parser = argparse.ArgumentParser(prog=prog_name, description=descript_msg)
-    
-    
-    # group = parser.add_mutually_exclusive_group(required=True)
-    
-    # help_msg = '''The original layout for Hunt the Wumpus has 20 caves in a dodecahedron connection pattern.
-    # '''
-    
-    # group.add_argument('-o', '--original_layout',
-    #                     type=bool,
-    #                     default=True,
-    #                     choices=[True, False],
-    #                     help=help_msg
-    #                     )
     
     help_msg = '''Player can choose the number of caves, 20, 40, 60. A size 
     of 20 will be the same as original game in a dodecahedron connection 
